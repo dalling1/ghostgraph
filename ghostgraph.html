@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>Version: Main</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans|Open+Sans+Condensed:Light&display=swap">
+<link href="graphControls.css" rel="stylesheet"/>
+<style>
+ html {
+  overflow: hidden;
+  background: #333;
+/*  font-family: "Open Sans", sans-serif;*/
+  font-family: "Open Sans Condensed", sans-serif;
+ }
+ #graphControls {
+  color: #600;
+ }
+ #thesvg {
+  border: 2px solid #446;
+  display: block;
+  margin: 0 auto;
+  box-shadow: inset 3px 3px 3px #bbb;
+  background-color: #777;
+
+  /* copied from graphControls.css: */
+  border: 2px solid black;
+  box-shadow: inset -4px -4px 6px #666, -3px 3px 5px #222;
+  border-radius: 10px;
+ }
+ circle {
+  stroke: #000;
+ }
+ line {
+  stroke-linecap: round;
+  stroke-linejoin: miter;
+ }
+ .link {
+/*
+  stroke: #ccc;
+  stroke: #fff1;
+  stroke: #fff3;
+*/
+  stroke: #0003;
+ }
+ .demobuttons {
+  float: right;
+  xxxvertical-align: middle;
+  margin-top: 5px;
+  margin-right: 10px;
+ }
+ .demobuttons td {
+  margin: 2px;
+  padding: 2px;
+  border-radius: 2px;
+  background: #252;
+  color: #fe0;
+  font-size: 10px;
+  text-align: center;
+  width: 12px;
+  height: 14px;
+  cursor: pointer;
+ }
+</style>
+</head>
+<body onload="setOutputValues();">
+
+<!-- aaa -->
+ <div id="graphControls">
+  <!-- slider control for the number of levels to draw -->
+  <div class="onecontrol">Depth:<br/>
+   <input type="range" style="vertical-align:top;" min="0" max="10" step="1" value="4" id="thedepth" oninput="thedepthOutput.value = thedepth.value;" />
+   <output for="thedepth" name="thedepthOutputName" id="thedepthOutput"></output>
+  </div>
+
+  <!-- slider control for the valency of the graph -->
+  <div class="onecontrol">Valency:<br/>
+   <input type="range" style="vertical-align:top;" min="0" max="12" step="1" value="6" id="thevalency" oninput="thevalencyOutput.value = thevalency.value;" />
+   <output name="thevalencyOutputName" id="thevalencyOutput"></output>
+  </div>
+
+  <!-- slider control for the width of each level's annulus -->
+  <div class="onecontrol">Radial spread:<br/>
+   <input type="range" style="vertical-align:top;" min="0" max="50" step="1" value="10" id="theradialSpread" oninput="theradialSpreadOutput.value = theradialSpread.value;" />
+   <output name="theradialSpreadOutputName" id="theradialSpreadOutput"></output>
+  </div>
+
+  <!-- slider control for the angular spread of nodes from their parents -->
+  <div class="onecontrol">Angular spread:<br/>
+   <input type="range" style="vertical-align:top;" min="0" max="180" step="1" value="10" id="theangularSpread" oninput="theangularSpreadOutput.value = theangularSpread.value;" />
+   <output name="theangularSpreadOutputName" id="theangularSpreadOutput"></output>
+  </div>
+
+  <!-- slider control for the strength of repulsion between nodes -->
+  <div class="onecontrol">
+   <span title="Click to reset" style="cursor:pointer;" onclick="thenodeCharge.value=400; thenodeChargeOutput.value = thenodeCharge.value;">Repulsion:</span><br/>
+   <input type="range" style="vertical-align:top;" min="-20" max="20" step="1" value="-2" id="thenodeCharge" oninput="thenodeChargeOutput.value = thenodeCharge.value;" />
+   <output name="thenodeChargeOutputName" id="thenodeChargeOutput"></output>
+  </div>
+
+  <!-- control for distributing nodes on each annulus -->
+  <div class="onecontrol controlwrapper">
+   <span class="wrappertext">Node distribution</span><br/>
+   <div class="slideCheckbox">
+    <span class="switchtext">uniform</span>
+    <label class="switch">
+     <input type="checkbox" id="therandomspacing" >
+     <span class="slider round"></span>
+    </label>
+    <span class="switchtext">random</span>
+   </div>
+  </div>
+
+  <!-- control for drawing edges or not -->
+  <div class="onecontrol">Edges?<br/><label class="switch"><input type="checkbox" id="thedrawedges"><span class="slider round"></span></label></div>
+
+  <!-- control for using simple or "initial" radial attraction -->
+  <div class="onecontrol controlwrapper">
+   <span class="wrappertext">Gravity</span><br/>
+   <div class="slideCheckbox">
+    <span class="switchtext">simple</span>
+    <label class="switch">
+     <input type="checkbox" id="theradialattraction" >
+     <span class="slider round"></span>
+    </label>
+    <span class="switchtext">"initial"</span>
+   </div>
+  </div>
+
+  <!-- control for changing the edge width based on either the graph the edge is part of or distance from the root node (depth) -->
+  <div class="onecontrol controlwrapper unused">
+   <span class="wrappertext">Edge thickness</span><br/>
+   <div class="slideCheckbox">
+    <span class="switchtext">graph</span>
+    <label class="switch">
+     <input type="checkbox" checked id="thethicknessFP" >
+     <span class="slider round"></span>
+    </label>
+    <span class="switchtext">depth</span>
+   </div>
+  </div>
+
+  <!-- control for changing the scaling rule for node size (biggest in the middle or on the outside) -->
+  <div class="onecontrol controlwrapper">
+   <span class="wrappertext">Largest node</span><br/>
+   <div class="slideCheckbox">
+    <span class="switchtext">centre</span>
+    <label class="switch">
+     <input type="checkbox" id="thenodescaledir" >
+     <span class="slider round"></span>
+    </label>
+    <span class="switchtext">edge</span>
+   </div>
+  </div>
+
+  <!-- control for choosing which label to show on nodes -->
+  <div class="onecontrol controlwrapper">
+   <span class="wrappertext">Colour scheme</span><br/>
+   <select id="thecolourscheme" onchange="">
+    <option value="default">default</option>
+    <option value="d3">d3</option>
+    <option value="bluered">blue-red</option>
+    <option value="bluewhite">blue-white</option>
+    <option value="blackwhite">black-white</option>
+    <option value="whiteblack">white-black</option>
+   </select>
+  </div>
+
+  <!-- slider control for the maximum number of nodes to create -->
+  <div class="onecontrol">Max. # nodes:<br/>
+   <input type="range" style="vertical-align:top;" min="0" max="2000" step="100" value="0" id="thelevellimit" oninput="thelevellimitOutput.value = thelevellimit.value;" />
+   <output name="thelevellimitOutputName" id="thelevellimitOutput"></output>
+  </div>
+
+  <!-- draw the graph -->
+  <button class="onecontrol" style="font-size:2em;" onclick="run();">GO</button>
+
+  <div class="demobuttons">
+   <table>
+    <tr>
+     <td onclick="demo(1)">1</td>
+     <td onclick="demo(2)">2</td>
+     <td onclick="demo(3)">3</td>
+     <td onclick="demo(4)">4</td>
+    </tr>
+    <tr>
+     <td onclick="demo(5)">5</td>
+     <td onclick="demo(6)">6</td>
+     <td onclick="demo(7)">7</td>
+     <td onclick="demo(8)">8</td>
+    </tr>
+  </div>
+ </div>
+<!-- aaa -->
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+
+<script>
+// function to provide labels ///////////////////////////////////////////////////////////////////// fn:label
+function label(n){
+ return (n>=0 & n<thelabels.length ? thelabels[n] : "X"); // return 'X' if n is out of range
+}
+
+// function to add children to a given node //////////////////////////////////////////////////////// fn:children
+function addchildren(thisnode,maxlevels=0){
+ for (var v=0;v<valency;v++){
+  newnode = thisnode+label(v);
+  thenodes.push(newnode);
+//  theindices.push(theindices.length); // sequential numbering
+  theedges.push([thisnode, newnode]); // edges by label, eg ["a", "aa"]
+  theedgesFrom.push(thisnode);
+  theedgesTo.push(newnode);
+  theedgesindices.push([thenodes.indexOf(thisnode), thenodes.indexOf(newnode)]); // edges by index, eg [125, 128]
+  // keep going?
+  thisdepth=thisnode.length-1; // node depth is the distance from the root "0" node
+  if (thisdepth<maxlevels-1){
+   addchildren(thenodes.slice(-1).pop(),maxlevels);
+  }
+ }
+}
+
+// function to turn nodes and edges into dot output //////////////////////////////////////////////// fn: mkdot
+function mkdot(nodes,edges){
+ var thisgraph = 'graph {\n';
+ thisgraph += '\tnode [shape=circle, color=black, style=filled, fillcolor="#88888844", fontsize=14]\n'
+ thisgraph += '\t// EDGES\n';
+ for (var i=0;i<theedges.length;i++){
+  thisgraph += '\t' + theedges[i][0] + EDGESEP + theedges[i][1] + '\n';
+ }
+ thisgraph += '}\n';
+ return thisgraph;
+}
+
+// function to find a d3 node with the given label ///////////////////////////////////////////////// fn: findlabel
+function findlabel(nodes,label){
+ var foundindex = -1;
+ for (var i=0;i<nodes.length;i++){
+  if (nodes[i].label==label){
+   foundindex = i;
+  }
+ }
+ return foundindex;
+}
+
+
+// make some choices (later these can be controls on the web page):
+const Pi = Math.acos(-1);
+const thelabels = "abcdefghijklmnopqrstuvwxyz0123456789".split(""); // used for dot language output
+const EDGESEP = " -- "; // dot language output separator (-- or ->)
+
+function run(){
+console.log("TODO: make padding, maxclusterR and annular radius scaling user controls");
+
+ if (!!document.getElementById("thesvg")) d3.select("svg").remove();
+ // get up control values /////////////////////////////////////////////////////////////////////// set-up
+ //    good examples:  v=7,d=4  v=3,d=7  v=5,d=5  v=5,d=6, v=11,d=2
+ valency = parseInt(document.getElementById("thevalency").value);
+ maxdepth = parseInt(document.getElementById("thedepth").value);
+ nodeScaleDir = document.getElementById("thenodescaledir").checked;
+ radialSpread = parseInt(document.getElementById("theradialSpread").value); // width of each level's annulus (originally 5)
+ angularSpread = (Pi/180.0)*parseInt(document.getElementById("theangularSpread").value); // how closely a node's angle is to its parent's
+ levellimit = parseInt(document.getElementById("thelevellimit").value); // maximum number of nodes to add at any given level [experimental!]
+ USERANDOMSPACING = document.getElementById("therandomspacing").checked;
+ USERADIALATTRACTION = document.getElementById("theradialattraction").checked;
+ DRAWEDGES = document.getElementById("thedrawedges").checked;
+ colourscheme = document.getElementById("thecolourscheme").value;
+ nodeCharge = parseInt(document.getElementById("thenodeCharge").value);
+
+ // need to convert these to controls: xxx
+ nodeScale = 2; // node size (this * level) originally 1.5 [quite how does this differ from radiusScale?]
+ clusterGravity = 0.4; // originally 0.1
+ collideStrength = 0.25; // originally 0.85
+ edgeStrength = 0.1; // originally 0.1
+ maxclusterR = 250; // originally 350 then 300 (reduced to 300 so that the control bar fits in)
+// nodeCharge = -2; // originally 0; -10 gives large spacing between nodes; +1 is interesting (sticky)
+ levelspread = 5; // scales the random spread of child node angles; 1, 10 and 100 are interesting values
+ nodepadding = 16;                   // separation between nodes
+ maxRadius = maxdepth*nodeScale;    // maximum node size (was 10)
+ radiusScale = 2; // node size (this * level) originally 1.5
+
+
+
+
+
+
+ // initialise
+ thenodes = [label(0)];
+ theedges = []; // pair-wise edges, using labels
+ theedgesindices = []; // pair-wise edges, numerical
+ theedgesFrom = []; // parent nodes
+ theedgesTo = []; // child nodes
+ levelcount = Array(maxdepth+1); // root is level 0, plus maxdepth levels // count number of d3 nodes at each level
+// var levelskip = Array(maxdepth+1); // root is level 0, plus maxdepth levels // count number of d3 nodes not created at each level
+ levelcount.fill(0); // initialise
+// levelskip.fill(0); // initialise
+ levelskip = 0;
+
+ // svg set-up ////////////////////////////////////////////////////////////////////////////////////// svg set-up
+ svgwidth = window.innerWidth*0.98;
+ svgheight = (window.innerHeight - 20 - document.getElementById("graphControls").clientHeight)*0.98;
+ svgborder = 100;
+
+ // create the graph //////////////////////////////////////////////////////////////////////////////// make the graph
+ addchildren(thenodes.slice(-1).pop(),maxdepth);
+ G=mkdot(thenodes,theedges);
+
+ // Create a set of colours for each level
+ switch (colourscheme){
+  case "d3":
+  case "default":
+   color = d3.scale.category10().domain(d3.range(maxdepth));
+   break;
+  case "blackwhite":
+   color = d3.scale.linear().domain([1,maxdepth]).range(["white", "black"]);
+   break;
+  case "whiteblack":
+   color = d3.scale.linear().domain([1,maxdepth]).range(["black", "white"]);
+   break;
+  case "bluewhite":
+   color = d3.scale.linear().domain([1,maxdepth]).range(["white", "blue"]);
+   break;
+  case "bluered":
+   color = d3.scale.linear().domain([1,maxdepth]).range(["red", "blue"]);
+   break;
+  default:
+   color = d3.scale.category10().domain(d3.range(maxdepth));
+ }
+ // set up circular positions for the nodes at each level
+ clusterR = linspace(0,maxclusterR,maxdepth+1);
+ CX = svgwidth/2;
+ CY = svgheight/2;
+
+ // set the colour, radius and (cx,cy) for the cluster centre, for each node
+ // create nodes for each node in the graph
+ nodes=[];
+ for (var k in thenodes){
+  var thislevel = thenodes[k].length - 1;
+  if (levelcount[thislevel]<levellimit | levellimit==0){
+   var levelanglestep = levelspread*linspace(0,2*Pi,Math.pow(valency,thislevel)+1,1); // get the second value from linspace to use as the step size
+
+
+   if (USERANDOMSPACING){  
+    // the angle of the root node is zero, and for the first level it is random
+    var thistheta = 0; // initialise
+    if (thislevel<2){
+     thistheta = thislevel*(Math.random() * (2*Pi) - Pi);
+    } else {
+     // for higher levels, relate the node angles to their parent node:
+     var thisparentlabel = thenodes[k].slice(0,-1);
+     var thisparent = findlabel(nodes,thisparentlabel);
+     thistheta = nodes[thisparent].theta + Math.random()*angularSpread - angularSpread/2; // angularSpread defines the spread about the parent's angle
+    }
+   } else {
+    // uniform spacing around the annulus:
+    var nn=levelcount[thislevel];
+    var thistheta = linspace(-Pi,Pi,Math.pow(valency,thislevel)+1,nn); // pow(...)+1 since the endpoints are identified on the circle (prevents overlapping)
+   }
+
+
+   // *** only proceed if the parent node exists [not sure how these fail to exist, investigate further...] ***
+   var annulusR = radialSpread*thislevel;
+//   var annulusR = radialSpread;
+
+   if (thislevel==0) {
+    var thisR = clusterR[thislevel];
+   } else {
+    var thisR = clusterR[thislevel] + Math.random()*annulusR - annulusR/2;
+   }
+   var thisX = thisR*Math.cos(thistheta);
+   var thisY = thisR*Math.sin(thistheta);
+   var thisnode = {
+      radius: (nodeScaleDir?Math.round(nodeScale*radiusScale*(thislevel+1)):Math.round(nodeScale*(maxdepth - thislevel+1))),
+      color: color(thislevel),
+      // node position: arranged on a circle for each level:
+      cx: Math.round(CX + thisX),
+      cy: Math.round(CY + thisY),
+      cr: Math.round(thisR),
+      label: thenodes[k],
+      theta: thistheta,
+   };
+   nodes.push(thisnode);
+   levelcount[thislevel]++;
+  } else {
+   // levellimit reached, don't create any more d3 nodes at this level
+//   levelskip[thislevel]++;
+   levelskip++;
+  }
+ }
+
+
+ // create the force layout
+ force = d3.layout.force()
+     .nodes(nodes)
+     .size([svgwidth, svgheight])
+     .gravity(0) // attraction ***towards the centre***, not the cluster centres; different to the gravity() function
+     .charge(nodeCharge)
+     .linkStrength(edgeStrength)
+     .on("tick", tick)
+     .start();
+
+ /* Other attributes that we might set:
+    .linkDistance(20)
+    .linkDistance( function(d) { return d.radius; }) // alternative, experimental
+ */
+
+ // create the SVG object
+ thesvg = d3.select("body").append("svg")
+     .attr("width", svgwidth)
+     .attr("height", svgheight)
+     .attr("id","thesvg")
+//     .style("background-color","#cc8")
+     .attr("onclick", "bump()");
+//     .attr("onclick", "window.location.reload()");
+
+ // d3 objects:
+ nodes = force.nodes();
+ links = force.links();
+ node = thesvg.selectAll(".node");
+ link = thesvg.selectAll(".link");
+
+ // make a circle of the right style for each node
+ circle = thesvg.selectAll("node")
+     .data(nodes)
+     .enter().append("circle")
+       .attr("r", function(d) { return d.radius; })
+       .style("fill", function(d) { return d.color; })
+       .attr("id", function(d) {return d.label; })
+       .attr("class", "node") // was "force node"
+       .call(force.drag);
+
+ // create the edges between nodes
+ if (DRAWEDGES) for (var i=0;i<theedgesindices.length;i++){
+  eFrom = findlabel(nodes,theedges[i][0]);
+  eTo = findlabel(nodes,theedges[i][1]);
+//  force.links().push({source:theedgesindices[i][0], target:theedgesindices[i][1]}); // quicker, if we can guarantee that all of the nodes exist (ie. no levellimit)
+  if (eFrom>-1 & eTo>-1){
+   force.links().push({source:eFrom, target:eTo});
+  }
+ }
+
+ restart();
+} // end run()
+
+
+// tick function for the force simulation ///////////////////////////////////////////////////////////////////// fn:tick
+function tick(e) {
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  circle
+      .each(gravity(clusterGravity * e.alpha))
+      .each(collide(collideStrength))
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+}
+
+// function for restarting the animation ///////////////////////////////////////////////////////////////////// fn:restart
+function restart() {
+  link = link.data(links);
+  link.enter().insert("line", ".node")
+      .attr("class", "link"); // was "force link"
+  node = node.data(nodes);
+  force.start();
+}
+
+// custom gravity function for d3 ///////////////////////////////////////////////////////////////////// fn:gravity
+function gravity(alpha) {
+  return function(d) {
+    var r = Math.pow(Math.pow(CX-d.x,2)+Math.pow(CY-d.y,2),0.5);
+    var ax = d.x + (CX - d.x)*(r-d.cr)/r; // point on annulus in the direction of CX,CY
+    var ay = d.y + (CY - d.y)*(r-d.cr)/r;
+
+    // radial gravity: move towards this node's annulus' radius in the direction of CX,CY
+    if (USERADIALATTRACTION){ // simple
+     // move towards this node's cx,cy: // "initial"
+     d.y += (d.cy - d.y) * alpha;
+     d.x += (d.cx - d.x) * alpha;
+    } else {
+     d.y += ((ay - d.y) * alpha);
+     d.x += ((ax - d.x) * alpha);
+    }
+
+
+    // the root node is (much) more strongly attracted to its 'home' location
+//    d.x += (d.cx - d.x) * (alpha + (2*alpha)*(d.index==0));
+  };
+}
+
+
+// custom collision function for d3 ///////////////////////////////////////////////////////////////////// fn:collide
+function collide(alpha) {
+  var quadtree = d3.geom.quadtree(nodes);
+  return function(d) {
+    var r = d.radius + maxRadius + nodepadding,
+        nx1 = d.x - r,
+        nx2 = d.x + r,
+        ny1 = d.y - r,
+        ny2 = d.y + r;
+    quadtree.visit(function(quad, x1, y1, x2, y2) {
+      if (quad.point && (quad.point !== d)) {
+        var x = d.x - quad.point.x,
+            y = d.y - quad.point.y,
+            l = Math.sqrt(x * x + y * y),
+            r = d.radius + quad.point.radius + (d.color !== quad.point.color) * nodepadding;
+        if (l < r) {
+          l = (l - r) / l * alpha;
+          d.x -= x *= l;
+          d.y -= y *= l;
+          quad.point.x += x;
+          quad.point.y += y;
+        }
+      }
+      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+    });
+  };
+}
+
+// bump function for d3 ///////////////////////////////////////////////////////////////////// fn:bump
+// Add some random shifts to node positions (shake them up a little)
+function bump(strength=5){
+ // apply a small perturbation to all node positions
+ nodes.forEach(function(d,i) {
+  d.x += (Math.random() - .5) * strength;
+  d.y += (Math.random() - .5) * strength;
+ });
+ force.resume();
+}
+
+
+// linspace function ///////////////////////////////////////////////////////////////////// fn:linspace
+// function to return a vector of uniformly spaced values between the specified limits (optionally, only return the kth value)
+function linspace(from,to,n,k=-1){
+ var s = [];
+ if (n==1){ // for n==1, return the centre of the interval
+  s[0] = (to+from)/2;
+ } else {
+  for (var i=0;i<n;i++) s[i]= i/(n-1)*(to-from) + from;
+ }
+ if (k>-1){ // return only the kth element of the list?
+  return s[k];
+ } else {
+  return s;
+ }
+}
+
+// HTML input labelling function ///////////////////////////////////////////////////////////////////// fn:setOutputValues
+// function which looks for inputs and their labels (containing the input value), and sets the label
+// (only called on page load, to set the initial labels)
+function setOutputValues(){
+ var inputs = document.getElementsByTagName("input"); // get a list of the page inputs
+ for (var i=0;i<inputs.length;i++){ // loop over the inputs
+  if (!!document.getElementById(inputs[i].id+"Output")){ // does an output tag for this control exist?
+   document.getElementById(inputs[i].id+"Output").value = inputs[i].value; // set the value of the output to the input
+  }
+ }
+}
+
+// function to get the control values ///////////////////////////////////////////////////////////////// fn: getValues
+function getValues(){
+ var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeCharge", "therandomspacing", "thedrawedges", "theradialattraction", "thethicknessFP", "thenodescaledir", "thecolourscheme", "thelevellimit"];
+ var outval = Array(theinputs.length);
+ for (var i=0;i<theinputs.length;i++){
+  switch (document.getElementById(theinputs[i]).type){
+   case "select-one":
+    outval[i] = document.getElementById(theinputs[i]).selectedIndex;
+    break;
+   case "checkbox":
+    outval[i] = document.getElementById(theinputs[i]).checked;
+    break;
+   case "range":
+    outval[i] = document.getElementById(theinputs[i]).value;
+   break;
+  }
+
+ }
+ return outval;
+}
+
+// function to set the controls (for pre-defined demos) ////////////////////////////////////////////// fn: setValues
+function setValues(inval){
+ var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeCharge", "therandomspacing", "thedrawedges", "theradialattraction", "thethicknessFP", "thenodescaledir", "thecolourscheme", "thelevellimit"];
+ if (inval.length != theinputs.length){
+  console.log("setValues(): wrong number of input values (should be "+theinputs.length+")");
+ } else {
+  for (var i=0;i<theinputs.length;i++){
+   // need to set an integer, a checkbox or a select options:
+   switch (document.getElementById(theinputs[i]).type){
+    case "select-one":
+     document.getElementById(theinputs[i]).selectedIndex = parseInt(inval[i]);
+     break;
+    case "checkbox":
+     document.getElementById(theinputs[i]).checked = inval[i];
+     break;
+    case "range":
+     document.getElementById(theinputs[i]).value = parseInt(inval[i]);
+    break;
+   }
+  }
+  setOutputValues();
+  run();
+ }
+}
+
+// function to run some demos //////////////////////////////////////////////////////////////////////// fn:demo
+function demo(n=0){
+ // demo 0 is simply the default values
+ var demos = [];
+ demos.push([4,6,10,10,-2,false,false,false,false,0,0]);       // 0, defaults
+ demos.push([5,2,30,30,-2,true,false,false,true,false,0,0]);   // 1
+ demos.push([4,5,10,10,-2,true,true,true,true,false,4,0]);     // 2
+ demos.push([3,5,25,10,-2,false,true,true,true,true,1,0]);     // 3
+ demos.push([4,10,1,30,-2,true,false,false,true,false,4,900]); // 4
+ demos.push([4,6,1,30,6,true,false,true,true,false,4,0]);      // 5
+ demos.push([4,6,1,30,6,true,true,true,true,false,4,0]);       // 6
+ demos.push([4,6,1,30,6,false,true,true,true,false,4,0]);      // 7
+ demos.push([2,12,1,30,-10,true,true,true,true,true,1,0]);     // 8
+ if (n<demos.length){
+  setValues(demos[n]);
+ }
+}
+
+</script>
+
+</body>
+</html>
