@@ -126,15 +126,15 @@
   </div>
 
   <!-- control for changing the edge width based on either the graph the edge is part of or distance from the root node (depth) -->
-  <div class="onecontrol controlwrapper unused">
+  <div class="onecontrol controlwrapper">
    <span class="wrappertext">Edge thickness</span><br/>
    <div class="slideCheckbox">
-    <span class="switchtext">graph</span>
+    <span class="switchtext">equal</span>
     <label class="switch">
-     <input type="checkbox" checked id="thethicknessFP" >
+     <input type="checkbox" checked id="theedgethickness" >
      <span class="slider round"></span>
     </label>
-    <span class="switchtext">depth</span>
+    <span class="switchtext">level</span>
    </div>
   </div>
 
@@ -269,6 +269,7 @@ console.log("TODO: make padding, maxclusterR and annular radius scaling user con
  DRAWEDGES = document.getElementById("thedrawedges").checked;
  colourscheme = document.getElementById("thecolourscheme").value;
  nodeCharge = parseInt(document.getElementById("thenodeCharge").value);
+ edgeWidthScheme = document.getElementById("theedgethickness").checked;
 
  // need to convert these to controls: xxx
  nodeScale = 2; // node size (this * level) originally 1.5 [quite how does this differ from radiusScale?]
@@ -436,9 +437,10 @@ console.log("TODO: make padding, maxclusterR and annular radius scaling user con
  if (DRAWEDGES) for (var i=0;i<theedgesindices.length;i++){
   eFrom = findlabel(nodes,theedges[i][0]);
   eTo = findlabel(nodes,theedges[i][1]);
+  eLevel = nodes[eTo].label.length;
 //  force.links().push({source:theedgesindices[i][0], target:theedgesindices[i][1]}); // quicker, if we can guarantee that all of the nodes exist (ie. no levellimit)
   if (eFrom>-1 & eTo>-1){
-   force.links().push({source:eFrom, target:eTo});
+   force.links().push({source:eFrom, target:eTo, level:eLevel});
   }
  }
 
@@ -462,9 +464,14 @@ function tick(e) {
 
 // function for restarting the animation ///////////////////////////////////////////////////////////////////// fn:restart
 function restart() {
-  link = link.data(links);
-  link.enter().insert("line", ".node")
-      .attr("class", "link"); // was "force link"
+  if (maxdepth>0){
+   link = link.data(links);
+   link.enter().insert("line", ".node")
+       .attr("class", "link") // was "force link"
+       .style("stroke-width", function(d,i){
+           return (edgeWidthScheme?1+2*(maxdepth-links[i].level):1);
+       });
+  }
   node = node.data(nodes);
   force.start();
 }
@@ -563,7 +570,7 @@ function setOutputValues(){
 
 // function to get the control values ///////////////////////////////////////////////////////////////// fn: getValues
 function getValues(){
- var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeCharge", "therandomspacing", "thedrawedges", "theradialattraction", "thethicknessFP", "thenodescaledir", "thecolourscheme", "thelevellimit"];
+ var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeCharge", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodescaledir", "thecolourscheme", "thelevellimit"];
  var outval = Array(theinputs.length);
  for (var i=0;i<theinputs.length;i++){
   switch (document.getElementById(theinputs[i]).type){
@@ -584,7 +591,7 @@ function getValues(){
 
 // function to set the controls (for pre-defined demos) ////////////////////////////////////////////// fn: setValues
 function setValues(inval){
- var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeCharge", "therandomspacing", "thedrawedges", "theradialattraction", "thethicknessFP", "thenodescaledir", "thecolourscheme", "thelevellimit"];
+ var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeCharge", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodescaledir", "thecolourscheme", "thelevellimit"];
  if (inval.length != theinputs.length){
   console.log("setValues(): wrong number of input values (should be "+theinputs.length+")");
  } else {
@@ -612,15 +619,15 @@ function demo(n=0){
  // demo 0 is simply the default values
  var demos = [];
  demos.push([4,6,10,10,-2,false,false,false,false,0,0]);       // 0, defaults
- demos.push([5,2,30,30,-2,true,false,false,true,false,0,0]);   // 1
- demos.push([4,5,10,10,-2,true,true,true,true,false,4,0]);     // 2
- demos.push([3,5,25,10,-2,false,true,true,true,true,1,0]);     // 3
- demos.push([4,10,1,30,-2,true,false,false,true,false,4,900]); // 4
- demos.push([4,6,1,30,6,true,false,true,true,false,4,0]);      // 5
- demos.push([4,6,1,30,6,true,true,true,true,false,4,0]);       // 6
- demos.push([4,6,1,30,6,false,true,true,true,false,4,0]);      // 7
- demos.push([2,12,1,30,-10,true,true,true,true,true,1,0]);     // 8
- demos.push([4,6,16,56,-2,true,true,true,true,false,3,0]);     // 9
+ demos.push([5,2,30,30,-2,true,false,false,false,false,0,0]);   // 1
+ demos.push([4,5,10,10,-2,true,true,true,false,false,4,0]);     // 2
+ demos.push([3,5,25,10,-2,false,true,true,false,true,1,0]);     // 3
+ demos.push([4,10,1,30,-2,true,false,false,false,false,4,900]); // 4
+ demos.push([4,6,1,30,6,true,false,true,false,false,4,0]);      // 5
+ demos.push([4,6,1,30,6,true,true,true,false,false,4,0]);       // 6
+ demos.push([4,6,1,30,6,false,true,true,false,false,4,0]);      // 7
+ demos.push([2,12,1,30,-10,true,true,true,false,true,1,0]);     // 8
+ demos.push([4,6,16,56,-2,true,true,true,false,false,3,0]);     // 9
  if (n<demos.length){
   setValues(demos[n]);
  }
