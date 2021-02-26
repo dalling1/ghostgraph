@@ -618,7 +618,7 @@ function setValues(inval){
 function demo(n=0){
  // demo 0 is simply the default values
  var demos = [];
- demos.push([4,6,10,10,-2,false,false,false,false,0,0]);       // 0, defaults
+ demos.push([4,6,10,10,-2,false,true,false,false,0,0]);        // 0, defaults
  demos.push([5,2,30,30,-2,true,false,false,false,false,0,0]);   // 1
  demos.push([4,5,10,10,-2,true,true,true,false,false,4,0]);     // 2
  demos.push([3,5,25,10,-2,false,true,true,false,true,1,0]);     // 3
@@ -628,6 +628,7 @@ function demo(n=0){
  demos.push([4,6,1,30,6,false,true,true,false,false,4,0]);      // 7
  demos.push([2,12,1,30,-10,true,true,true,false,true,1,0]);     // 8
  demos.push([4,6,16,56,-2,true,true,true,false,false,3,0]);     // 9
+ demos.push([6,4,16,16,-2,true,false,true,false,false,0,0]);    // 10
  if (n<demos.length){
   setValues(demos[n]);
  }
