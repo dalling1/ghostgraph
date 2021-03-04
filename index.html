@@ -61,7 +61,7 @@
  }
 </style>
 </head>
-<body onload="setOutputValues();">
+<body onload="setValues(demo(0));setOutputValues();">
 
 <!-- aaa -->
  <div id="graphControls">
@@ -90,10 +90,9 @@
   </div>
 
   <!-- slider control for the strength of repulsion between nodes -->
-  <div class="onecontrol">
-   <span title="Click to reset" style="cursor:pointer;" onclick="thenodeCharge.value=400; thenodeChargeOutput.value = thenodeCharge.value;">Repulsion:</span><br/>
-   <input type="range" style="vertical-align:top;" min="-20" max="20" step="1" value="-2" id="thenodeCharge" oninput="thenodeChargeOutput.value = thenodeCharge.value;" />
-   <output name="thenodeChargeOutputName" id="thenodeChargeOutput"></output>
+  <div class="onecontrol">Repulsion<br/>
+   <input type="range" style="vertical-align:top;" min="-20" max="20" step="1" value="-2" id="thenodeRepulsion" oninput="thenodeRepulsionOutput.value = thenodeRepulsion.value;" />
+   <output name="thenodeRepulsionOutputName" id="thenodeRepulsionOutput"></output>
   </div>
 
   <!-- control for distributing nodes on each annulus -->
@@ -268,7 +267,7 @@ console.log("TODO: make padding, maxclusterR and annular radius scaling user con
  USERADIALATTRACTION = document.getElementById("theradialattraction").checked;
  DRAWEDGES = document.getElementById("thedrawedges").checked;
  colourscheme = document.getElementById("thecolourscheme").value;
- nodeCharge = parseInt(document.getElementById("thenodeCharge").value);
+ nodeRepulsion = parseInt(document.getElementById("thenodeRepulsion").value);
  edgeWidthScheme = document.getElementById("theedgethickness").checked;
 
  // need to convert these to controls: xxx
@@ -277,7 +276,7 @@ console.log("TODO: make padding, maxclusterR and annular radius scaling user con
  collideStrength = 0.25; // originally 0.85
  edgeStrength = 0.1; // originally 0.1
  maxclusterR = 250; // originally 350 then 300 (reduced to 300 so that the control bar fits in)
-// nodeCharge = -2; // originally 0; -10 gives large spacing between nodes; +1 is interesting (sticky)
+// nodeRepulsion = -2; // originally 0; -10 gives large spacing between nodes; +1 is interesting (sticky)
  levelspread = 5; // scales the random spread of child node angles; 1, 10 and 100 are interesting values
  nodepadding = 16;                   // separation between nodes
  maxRadius = maxdepth*nodeScale;    // maximum node size (was 10)
@@ -398,7 +397,7 @@ console.log("TODO: make padding, maxclusterR and annular radius scaling user con
      .nodes(nodes)
      .size([svgwidth, svgheight])
      .gravity(0) // attraction ***towards the centre***, not the cluster centres; different to the gravity() function
-     .charge(nodeCharge)
+     .charge(-nodeRepulsion)
      .linkStrength(edgeStrength)
      .on("tick", tick)
      .start();
@@ -570,7 +569,7 @@ function setOutputValues(){
 
 // function to get the control values ///////////////////////////////////////////////////////////////// fn: getValues
 function getValues(){
- var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeCharge", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodescaledir", "thecolourscheme", "thelevellimit"];
+ var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeRepulsion", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodescaledir", "thecolourscheme", "thelevellimit"];
  var outval = Array(theinputs.length);
  for (var i=0;i<theinputs.length;i++){
   switch (document.getElementById(theinputs[i]).type){
@@ -591,7 +590,7 @@ function getValues(){
 
 // function to set the controls (for pre-defined demos) ////////////////////////////////////////////// fn: setValues
 function setValues(inval){
- var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeCharge", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodescaledir", "thecolourscheme", "thelevellimit"];
+ var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeRepulsion", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodescaledir", "thecolourscheme", "thelevellimit"];
  if (inval.length != theinputs.length){
   console.log("setValues(): wrong number of input values (should be "+theinputs.length+")");
  } else {
@@ -618,17 +617,18 @@ function setValues(inval){
 function demo(n=0){
  // demo 0 is simply the default values
  var demos = [];
- demos.push([4,6,10,10,-2,false,true,false,false,false,0,0]);        // 0, defaults
- demos.push([5,2,30,30,-2,true,false,false,false,false,0,0]);   // 1
- demos.push([4,5,10,10,-2,true,true,true,false,false,4,0]);     // 2
- demos.push([3,5,25,10,-2,false,true,true,false,true,1,0]);     // 3
- demos.push([4,10,1,30,-2,true,false,false,false,false,4,900]); // 4
- demos.push([4,6,1,30,6,true,false,true,false,false,4,0]);      // 5
- demos.push([4,6,1,30,6,true,true,true,false,false,4,0]);       // 6
- demos.push([4,6,1,30,6,false,true,true,false,false,4,0]);      // 7
- demos.push([2,12,1,30,-10,true,true,true,false,true,1,0]);     // 8
- demos.push([4,6,16,56,-2,true,true,true,false,false,3,0]);     // 9
- demos.push([6,4,16,16,-2,true,false,true,false,false,0,0]);    // 10
+ demos.push([3,6,0,180,0,false,true,true,false,false,0,0]);    // 0, defaults
+ demos.push([4,6,10,10,2,false,true,false,false,false,0,0]);   // 1, old defaults
+ demos.push([5,2,30,30,2,true,false,false,false,false,0,0]);   // 2
+ demos.push([4,5,10,10,2,true,true,true,false,false,4,0]);     // 3
+ demos.push([3,5,25,10,2,false,true,true,false,true,1,0]);     // 4
+ demos.push([4,10,1,30,2,true,false,false,false,false,4,900]); // 5
+ demos.push([4,6,1,30,-6,true,false,true,false,false,4,0]);    // 6
+ demos.push([4,6,1,30,-6,true,true,true,false,false,4,0]);     // 7
+ demos.push([4,6,1,30,-6,false,true,true,false,false,4,0]);    // 8
+ demos.push([2,12,1,30,10,true,true,true,false,true,1,0]);     // 9
+ demos.push([4,6,16,56,2,true,true,true,false,false,3,0]);     // 10
+ demos.push([6,4,16,16,2,true,false,true,false,false,0,0]);    // 11
  if (n<demos.length){
   setValues(demos[n]);
  }
