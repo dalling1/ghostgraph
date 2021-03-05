@@ -585,7 +585,7 @@ function setOutputValues(){
 
 // function to get the control values ///////////////////////////////////////////////////////////////// fn: getValues
 function getValues(){
- var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeRepulsion", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodeScaleDirection", "thecolourscheme", "thelevellimit"];
+ var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeRepulsion", "theoverallRadius", "thenodeRadius", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodeScaleDirection", "thecolourscheme", "thelevellimit"];
  var outval = Array(theinputs.length);
  for (var i=0;i<theinputs.length;i++){
   switch (document.getElementById(theinputs[i]).type){
@@ -645,6 +645,7 @@ function demo(n=0){
  demos.push([2,12,1,30,10,350,2,true,true,true,false,true,1,0]);     // 9
  demos.push([4,6,16,56,2,350,2,true,true,true,false,false,3,0]);     // 10
  demos.push([6,4,16,16,2,350,2,true,false,true,false,false,0,0]);    // 11
+ demos.push([4,5,0,0,10,250,1,true,false,true,false,false,5,0]);     // 12
  if (n<demos.length){
   setValues(demos[n]);
  }
