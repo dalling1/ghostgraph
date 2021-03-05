@@ -25,6 +25,7 @@ output {
 }
 .onecontrol input[type=range] {
  width: 80px;
+ width: 50px;
 }
 .unused {
  /*display: none !important;*/

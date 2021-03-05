@@ -90,9 +90,21 @@
   </div>
 
   <!-- slider control for the strength of repulsion between nodes -->
-  <div class="onecontrol">Repulsion<br/>
+  <div class="onecontrol">Repulsion:<br/>
    <input type="range" style="vertical-align:top;" min="-20" max="20" step="1" value="-2" id="thenodeRepulsion" oninput="thenodeRepulsionOutput.value = thenodeRepulsion.value;" />
    <output name="thenodeRepulsionOutputName" id="thenodeRepulsionOutput"></output>
+  </div>
+
+  <!-- slider control for the overall radius of the graph -->
+  <div class="onecontrol">Overall radius:<br/>
+   <input type="range" style="vertical-align:top;" min="50" max="350" step="50" value="350" id="theoverallRadius" oninput="theoverallRadiusOutput.value = theoverallRadius.value;" />
+   <output name="theoverallRadiusOutputName" id="theoverallRadiusOutput"></output>
+  </div>
+
+  <!-- slider control for the (largest) node radius -->
+  <div class="onecontrol">Node radius:<br/>
+   <input type="range" style="vertical-align:top;" min="1" max="10" step="1" value="2" id="thenodeRadius" oninput="thenodeRadiusOutput.value = thenodeRadius.value;" />
+   <output name="thenodeRadiusOutputName" id="thenodeRadiusOutput"></output>
   </div>
 
   <!-- control for distributing nodes on each annulus -->
@@ -143,7 +155,7 @@
    <div class="slideCheckbox">
     <span class="switchtext">centre</span>
     <label class="switch">
-     <input type="checkbox" id="thenodescaledir" >
+     <input type="checkbox" id="thenodeScaleDirection" >
      <span class="slider round"></span>
     </label>
     <span class="switchtext">edge</span>
@@ -252,14 +264,12 @@ const thelabels = "abcdefghijklmnopqrstuvwxyz0123456789".split(""); // used for 
 const EDGESEP = " -- "; // dot language output separator (-- or ->)
 
 function run(){
-console.log("TODO: make padding, maxclusterR and annular radius scaling user controls");
-
  if (!!document.getElementById("thesvg")) d3.select("svg").remove();
- // get up control values /////////////////////////////////////////////////////////////////////// set-up
+ // set up control values /////////////////////////////////////////////////////////////////////// set-up
  //    good examples:  v=7,d=4  v=3,d=7  v=5,d=5  v=5,d=6, v=11,d=2
  valency = parseInt(document.getElementById("thevalency").value);
  maxdepth = parseInt(document.getElementById("thedepth").value);
- nodeScaleDir = document.getElementById("thenodescaledir").checked;
+ nodeScaleDirection = document.getElementById("thenodeScaleDirection").checked;
  radialSpread = parseInt(document.getElementById("theradialSpread").value); // width of each level's annulus (originally 5)
  angularSpread = (Pi/180.0)*parseInt(document.getElementById("theangularSpread").value); // how closely a node's angle is to its parent's
  levellimit = parseInt(document.getElementById("thelevellimit").value); // maximum number of nodes to add at any given level [experimental!]
@@ -269,20 +279,19 @@ console.log("TODO: make padding, maxclusterR and annular radius scaling user con
  colourscheme = document.getElementById("thecolourscheme").value;
  nodeRepulsion = parseInt(document.getElementById("thenodeRepulsion").value);
  edgeWidthScheme = document.getElementById("theedgethickness").checked;
+ clusterRadius = parseInt(document.getElementById("theoverallRadius").value); // size of the whole graph
+ nodeRadius = parseInt(document.getElementById("thenodeRadius").value); // size of each node (then scaled by level)
 
  // need to convert these to controls: xxx
- nodeScale = 2; // node size (this * level) originally 1.5 [quite how does this differ from radiusScale?]
+// nodeScale = 2; // node size (this * level) originally 1.5
  clusterGravity = 0.4; // originally 0.1
  collideStrength = 0.25; // originally 0.85
  edgeStrength = 0.1; // originally 0.1
- maxclusterR = 250; // originally 350 then 300 (reduced to 300 so that the control bar fits in)
-// nodeRepulsion = -2; // originally 0; -10 gives large spacing between nodes; +1 is interesting (sticky)
  levelspread = 5; // scales the random spread of child node angles; 1, 10 and 100 are interesting values
  nodepadding = 16;                   // separation between nodes
- maxRadius = maxdepth*nodeScale;    // maximum node size (was 10)
- radiusScale = 2; // node size (this * level) originally 1.5
-
-
+// maxRadius = maxdepth*nodeScale;    // maximum node size (was 10)
+// radiusScale = 2; // node size (this * level) originally 1.5
+ maxRadius = maxdepth*nodeRadius;    // maximum node size ***for the d3 physics*** (was 10)
 
 
 
@@ -330,7 +339,7 @@ console.log("TODO: make padding, maxclusterR and annular radius scaling user con
    color = d3.scale.category10().domain(d3.range(maxdepth));
  }
  // set up circular positions for the nodes at each level
- clusterR = linspace(0,maxclusterR,maxdepth+1);
+ clusterR = linspace(0,clusterRadius,maxdepth+1);
  CX = svgwidth/2;
  CY = svgheight/2;
 
@@ -372,8 +381,15 @@ console.log("TODO: make padding, maxclusterR and annular radius scaling user con
    }
    var thisX = thisR*Math.cos(thistheta);
    var thisY = thisR*Math.sin(thistheta);
+   var thisRnode = 1;
+   if (nodeScaleDirection){ // largest node on the inside
+    thisRnode = Math.round(nodeRadius*(thislevel+1));
+   } else { // largest nodes on the outside
+    thisRnode = Math.round(nodeRadius*(maxdepth - thislevel+1));
+   }
+
    var thisnode = {
-      radius: (nodeScaleDir?Math.round(nodeScale*radiusScale*(thislevel+1)):Math.round(nodeScale*(maxdepth - thislevel+1))),
+      radius: thisRnode,
       color: color(thislevel),
       // node position: arranged on a circle for each level:
       cx: Math.round(CX + thisX),
@@ -569,7 +585,7 @@ function setOutputValues(){
 
 // function to get the control values ///////////////////////////////////////////////////////////////// fn: getValues
 function getValues(){
- var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeRepulsion", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodescaledir", "thecolourscheme", "thelevellimit"];
+ var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeRepulsion", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodeScaleDirection", "thecolourscheme", "thelevellimit"];
  var outval = Array(theinputs.length);
  for (var i=0;i<theinputs.length;i++){
   switch (document.getElementById(theinputs[i]).type){
@@ -590,7 +606,7 @@ function getValues(){
 
 // function to set the controls (for pre-defined demos) ////////////////////////////////////////////// fn: setValues
 function setValues(inval){
- var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeRepulsion", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodescaledir", "thecolourscheme", "thelevellimit"];
+ var theinputs = ["thedepth", "thevalency", "theradialSpread", "theangularSpread", "thenodeRepulsion", "theoverallRadius", "thenodeRadius", "therandomspacing", "thedrawedges", "theradialattraction", "theedgethickness", "thenodeScaleDirection", "thecolourscheme", "thelevellimit"];
  if (inval.length != theinputs.length){
   console.log("setValues(): wrong number of input values (should be "+theinputs.length+")");
  } else {
@@ -617,18 +633,18 @@ function setValues(inval){
 function demo(n=0){
  // demo 0 is simply the default values
  var demos = [];
- demos.push([3,6,0,180,0,false,true,true,false,false,0,0]);    // 0, defaults
- demos.push([4,6,10,10,2,false,true,false,false,false,0,0]);   // 1, old defaults
- demos.push([5,2,30,30,2,true,false,false,false,false,0,0]);   // 2
- demos.push([4,5,10,10,2,true,true,true,false,false,4,0]);     // 3
- demos.push([3,5,25,10,2,false,true,true,false,true,1,0]);     // 4
- demos.push([4,10,1,30,2,true,false,false,false,false,4,900]); // 5
- demos.push([4,6,1,30,-6,true,false,true,false,false,4,0]);    // 6
- demos.push([4,6,1,30,-6,true,true,true,false,false,4,0]);     // 7
- demos.push([4,6,1,30,-6,false,true,true,false,false,4,0]);    // 8
- demos.push([2,12,1,30,10,true,true,true,false,true,1,0]);     // 9
- demos.push([4,6,16,56,2,true,true,true,false,false,3,0]);     // 10
- demos.push([6,4,16,16,2,true,false,true,false,false,0,0]);    // 11
+ demos.push([3,6,0,180,0,350,2,false,true,true,false,false,0,0]);    // 0, defaults
+ demos.push([4,6,10,10,2,350,2,false,true,false,false,false,0,0]);   // 1, old defaults
+ demos.push([5,2,30,30,2,350,2,true,false,false,false,false,0,0]);   // 2
+ demos.push([4,5,10,10,2,350,2,true,true,true,false,false,4,0]);     // 3
+ demos.push([3,5,25,10,2,350,2,false,true,true,false,true,1,0]);     // 4
+ demos.push([4,10,1,30,2,350,2,true,false,false,false,false,4,900]); // 5
+ demos.push([4,6,1,30,-6,350,2,true,false,true,false,false,4,0]);    // 6
+ demos.push([4,6,1,30,-6,350,2,true,true,true,false,false,4,0]);     // 7
+ demos.push([4,6,1,30,-6,350,2,false,true,true,false,false,4,0]);    // 8
+ demos.push([2,12,1,30,10,350,2,true,true,true,false,true,1,0]);     // 9
+ demos.push([4,6,16,56,2,350,2,true,true,true,false,false,3,0]);     // 10
+ demos.push([6,4,16,16,2,350,2,true,false,true,false,false,0,0]);    // 11
  if (n<demos.length){
   setValues(demos[n]);
  }
